@@ -1,74 +1,56 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Box,
   Button,
   Card,
   CardContent,
   CardHeader,
-  TextField,
+  Grid,
   Typography,
-  Alert,
 } from "@mui/material";
-import { ArrowBack, Save } from "@mui/icons-material";
 import Link from "next/link";
-import { warehouseSchema, type WarehouseFormValues } from "@/lib/validations";
-import { warehouses } from "@/lib/data";
+import { ArrowBack, Save } from "@mui/icons-material";
+import FormInput from "@/components/form-input";
+import {
+  CITY_OPTIONS,
+  COUNTRY_OPTIONS,
+  STATE_OPTIONS,
+  WarehouseSchema,
+} from "@/schema/warehouse-schema";
+// import { WarehouseSchema } from '../schemas/warehouseSchema';
+// import FormInput from '../components/FormInput';
 
 export default function AddWarehousePage() {
-  const router = useRouter();
-  const [formData, setFormData] = useState<WarehouseFormValues>({
-    name: "",
-    location: "",
-    capacity: "",
-    utilization: "",
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(WarehouseSchema),
+    defaultValues: {
+      name: "",
+      warehouseCode: "",
+      description: "",
+      address: {
+        street: "",
+        city: "",
+        state: "",
+        country: "",
+        pincode: "",
+      },
+    },
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    // Clear error when field is edited
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: "" });
-    }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setSubmitError(null);
-
-    try {
-      // Validate form data
-      warehouseSchema.parse(formData);
-
-      // If validation passes, add the warehouse (in a real app, this would be an API call)
-      const newId = Math.max(...warehouses.map((w) => w.id), 0) + 1;
-
-      // In a real app, you would update the database here
-      console.log("Adding warehouse:", { id: newId, ...formData });
-
-      // Navigate back to warehouse list
-      router.push("/warehouse");
-    } catch (error) {
-      if (error.errors) {
-        // Format Zod validation errors
-        const formattedErrors = {};
-        error.errors.forEach((err) => {
-          formattedErrors[err.path[0]] = err.message;
-        });
-        setErrors(formattedErrors);
-      } else {
-        setSubmitError("An error occurred while saving the warehouse.");
-      }
-    }
+  const onSubmit = (data) => {
+    console.log("Validated data:", data);
+    // Handle form submission logic here
   };
 
   return (
-    <Box>
+    <Box p={4}>
       <Box display="flex" alignItems="center" mb={4}>
         <Button
           component={Link}
@@ -83,91 +65,113 @@ export default function AddWarehousePage() {
         </Typography>
       </Box>
 
-      {submitError && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {submitError}
-        </Alert>
-      )}
-
       <Card>
         <CardHeader title="Warehouse Information" />
         <CardContent>
-          <Box component="form" onSubmit={handleSubmit} noValidate>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="name"
-              label="Warehouse Name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              error={!!errors.name}
-              helperText={errors.name}
-              sx={{ mb: 3 }}
-            />
+          <Box component="form" onSubmit={handleSubmit(onSubmit)} noValidate>
+            <Grid container spacing={3}>
+              <Grid>
+                <FormInput
+                  name="name"
+                  control={control}
+                  label="Warehouse Name"
+                  error={errors.name}
+                />
+              </Grid>
 
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="location"
-              label="Location"
-              name="location"
-              value={formData.location}
-              onChange={handleInputChange}
-              error={!!errors.location}
-              helperText={errors.location}
-              sx={{ mb: 3 }}
-            />
+              <Grid>
+                <FormInput
+                  name="warehouseCode"
+                  control={control}
+                  label="Warehouse Code"
+                  error={errors.warehouseCode}
+                />
+              </Grid>
 
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="capacity"
-              label="Capacity"
-              name="capacity"
-              value={formData.capacity}
-              onChange={handleInputChange}
-              error={!!errors.capacity}
-              helperText={errors.capacity}
-              sx={{ mb: 3 }}
-            />
+              <Grid>
+                <FormInput
+                  name="description"
+                  control={control}
+                  label="Description"
+                  multiline
+                  rows={4}
+                  error={errors.description}
+                />
+              </Grid>
 
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="utilization"
-              label="Utilization"
-              name="utilization"
-              value={formData.utilization}
-              onChange={handleInputChange}
-              error={!!errors.utilization}
-              helperText={errors.utilization}
-              sx={{ mb: 3 }}
-            />
+              {/* Address Section */}
+              <Grid>
+                <Typography variant="h6" gutterBottom>
+                  Address Details
+                </Typography>
+              </Grid>
 
-            <Box display="flex" justifyContent="flex-end">
-              <Button
-                type="button"
-                variant="outlined"
-                component={Link}
-                href="/warehouse"
-                sx={{ mr: 2 }}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                startIcon={<Save />}
-              >
-                Save Warehouse
-              </Button>
-            </Box>
+              <Grid>
+                <FormInput
+                  name="address.street"
+                  control={control}
+                  label="Street Address"
+                  error={errors.address?.street}
+                />
+              </Grid>
+
+              <Grid>
+                <FormInput
+                  name="address.city"
+                  control={control}
+                  label="City"
+                  type="select"
+                  options={CITY_OPTIONS}
+                  error={errors.address?.city}
+                />
+              </Grid>
+
+              <Grid>
+                <FormInput
+                  name="address.state"
+                  control={control}
+                  label="State"
+                  type="select"
+                  options={STATE_OPTIONS}
+                  error={errors.address?.state}
+                />
+              </Grid>
+
+              <Grid>
+                <FormInput
+                  name="address.country"
+                  control={control}
+                  label="Country"
+                  type="select"
+                  options={COUNTRY_OPTIONS}
+                  error={errors.address?.country}
+                />
+              </Grid>
+
+              <Grid>
+                <FormInput
+                  name="address.pincode"
+                  control={control}
+                  label="Pincode"
+                  error={errors.address?.pincode}
+                />
+              </Grid>
+
+              <Grid>
+                <Box display="flex" justifyContent="flex-end" gap={2}>
+                  <Button variant="outlined" component={Link} href="/warehouse">
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    startIcon={<Save />}
+                  >
+                    Save Warehouse
+                  </Button>
+                </Box>
+              </Grid>
+            </Grid>
           </Box>
         </CardContent>
       </Card>
